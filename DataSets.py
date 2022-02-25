@@ -1,7 +1,7 @@
 from torch.utils.data import Dataset
 import glob
-from skimage import io
 from torchvision import transforms
+from torchvision.io import read_image
 
 
 class ShmootDataSet(Dataset):
@@ -20,7 +20,7 @@ class ShmootDataSet(Dataset):
     def __init__(self):
         self.from_im_last_idx = len(glob.glob(self.dir + 'FromIm/*')) - 1
         self.total_len = self.from_im_last_idx + len(glob.glob(self.dir + 'FromVid/*')) + 1
-        self.transform = transforms.Compose([transforms.ToTensor()])
+        self.transform = transforms.Compose([])
 
     def __len__(self):
         return self.total_len
@@ -31,12 +31,12 @@ class ShmootDataSet(Dataset):
 
         if idx <= self.from_im_last_idx:
             path = self.dir + 'FromIm/' + str(idx) + '.jpg'
-            image = io.imread(path)
+
         else:
             idx = idx - self.from_im_last_idx - 1
             path = self.dir + 'FromVid/' + str(idx) + '.jpg'
-            image = io.imread(path)
 
+        image = read_image(path)
         image = self.transform(image)
 
         return image
