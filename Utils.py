@@ -5,7 +5,7 @@ import torchvision.transforms.functional as F
 
 
 def visualize_batch(batch, im_per_row=4):
-    grid = make_grid(batch, nrow=im_per_row, padding=4)
+    grid = make_grid(batch, nrow=im_per_row, padding=2, pad_value=255)
     grid = F.to_pil_image(grid)
     plt.imshow(np.asarray(grid))
     plt.axis('off')
