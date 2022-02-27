@@ -12,22 +12,22 @@ class VaeEncoder(torch.nn.Module):
             self.device = device
 
         self.feature_extractor = nn.Sequential(
-            nn.Conv2d(3, 16, kernel_size=(3,3), stride=(2,2), padding=1),  # -> 64x64x16
+            nn.Conv2d(3, 16, kernel_size=3, stride=2, padding=1),  # -> 64x64x16
             nn.BatchNorm2d(16),
             nn.LeakyReLU(),
 
-            nn.Conv2d(16, 32, kernel_size=(3,3), stride=(2,2), padding=1),  # -> 32x32x32
+            nn.Conv2d(16, 32, kernel_size=3, stride=2, padding=1),  # -> 32x32x32
             nn.BatchNorm2d(32),
             nn.LeakyReLU(),
         )
 
-        self.mu_fc = torch.sequential(
+        self.mu_fc = nn.Sequential(
             nn.Linear(32*32*32, 512),
             nn.BatchNorm1d(512),
             nn.LeakyReLU(),
             nn.Linear(512, latent_size),)
 
-        self.log_sigma_fc = torch.sequential(
+        self.log_sigma_fc = nn.Sequential(
             nn.Linear(32*32*32, 512),
             nn.BatchNorm1d(512),
             nn.LeakyReLU(),
@@ -66,11 +66,11 @@ class VaeDecoder(torch.nn.Module):
         )
 
         self.decoder = nn.Sequential(
-            nn.ConvTranspose2d(32, 16, kernel_size=(3,3), stride=(2,2), padding=1),  # -> 64x64x16
+            nn.ConvTranspose2d(32, 16, kernel_size=3, stride=2, padding=1, output_padding=1),  # -> 64x64x16
             nn.BatchNorm2d(16),
             nn.LeakyReLU(),
 
-            nn.ConvTranspose2d(16, 3, kernel_size=(3,3), stride=(2,2), padding=1),  # -> 128x128x3
+            nn.ConvTranspose2d(16, 3, kernel_size=3, stride=2, padding=1, output_padding=1),  # -> 128x128x3
             nn.Sigmoid(),
         )
 
@@ -91,6 +91,8 @@ class Vae(torch.nn.Module):
         else:
             self.device = device
 
+        self.latent_size = latent_size
+
         self.encoder = VaeEncoder(latent_size, device=self.device)
         self.decoder = VaeDecoder(latent_size, device=self.device)
 
@@ -101,7 +103,7 @@ class Vae(torch.nn.Module):
         return x_reconstructed, mu, log_sigma, z
 
     def sample(self, num_samples=1):
-        z = torch.randn(num_samples, self.encoder.latent_size, device=self.device)
+        z = torch.randn(num_samples, self.latent_size, device=self.device)
         fake_shmooots = self.decoder(z)
 
         return fake_shmooots

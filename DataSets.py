@@ -46,7 +46,7 @@ class ShmootDataSet(Dataset):
             idx = idx - self.from_im_last_idx - 1
             path = self.dir + 'FromVid/' + str(idx) + '.jpg'
 
-        image = read_image(path)
+        image = read_image(path) / 255.0
         if self.augment:
             image = self.augmentation_transform(image)
 
@@ -55,15 +55,15 @@ class ShmootDataSet(Dataset):
 
 class ShmootDataSet128(ShmootDataSet):
     """ Shmoot dataset with 128x128 images """
-    def __init__(self):
+    def __init__(self, augment=True, augmentation_transform=None):
         self.dir = './Data/DataSet128/'
         self.im_size = 128
-        super().__init__()
+        super().__init__(augment=augment, augmentation_transform=augmentation_transform)
 
 
 class ShmootDataSet256(ShmootDataSet):
     """ Shmoot dataset with 256x256 images """
-    def __init__(self):
+    def __init__(self, augment=True, augmentation_transform=None):
         self.dir = './Data/DataSet256/'
         self.im_size = 256
-        super().__init__()
+        super().__init__(augment=augment, augmentation_transform=augmentation_transform)
