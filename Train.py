@@ -7,13 +7,15 @@ from Utils import visualize_batch, make_image_grid
 from torch.utils.tensorboard import SummaryWriter
 import time
 
+
+TB_RUN_NAME = 'LeanerFC'
 # --- hyper parameters ---
 BATCH_SIZE = 128
 EPOCHS = 500
 LEARNING_RATE = 2e-4
 LR_DECAY_GAMMA = 1
-LATENT_SIZE = 128
-BETA = 5
+LATENT_SIZE = 256
+BETA = 1
 
 
 def main():
@@ -22,7 +24,7 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("running on device:", device)
 
-    writer = SummaryWriter()  # add comment='run_name'
+    writer = SummaryWriter(comment=TB_RUN_NAME)  # add comment='run_name'
 
     data_set = ShmootDataSet128(augment=False)
     data_loader = get_shmoot_dataloader(data_set, batch_size=BATCH_SIZE)
