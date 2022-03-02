@@ -23,7 +23,7 @@ class ResidualConvBlock(nn.Module):
 
 
 class VaeEncoder(nn.Module):
-    def __init__(self, latent_size=128, num_residual_convs=3, device=None):
+    def __init__(self, latent_size=128, fc_layers=(512, 512, 512), num_residual_convs=3, device=None):
         super(VaeEncoder, self).__init__()
 
         if device is None:
@@ -33,37 +33,35 @@ class VaeEncoder(nn.Module):
 
         feature_extractor_layers = [
             nn.PixelUnshuffle(2),  # -> 64x64x12
-            nn.Conv2d(12, 16, kernel_size=3, padding='same'),  # -> 64x64x16
+            nn.Conv2d(12, 12, kernel_size=3, padding='same'),  # -> 64x64x12
             nn.LeakyReLU(),
-            nn.BatchNorm2d(16),
+            nn.BatchNorm2d(12),
 
-            nn.PixelUnshuffle(2),  # -> 32x32x64
-            nn.Conv2d(64, 32, kernel_size=3, padding='same'),  # -> 32x32x32
+            nn.PixelUnshuffle(2),  # -> 48x32x32
+            nn.Conv2d(48, 48, kernel_size=3, padding='same'),  # -> 48x32x32
             nn.LeakyReLU(),
-            nn.BatchNorm2d(32),
+            nn.BatchNorm2d(48),
         ]
         for _ in range(num_residual_convs):
-            feature_extractor_layers.append(ResidualConvBlock(32))
+            feature_extractor_layers.append(ResidualConvBlock(48))
 
         self.feature_extractor = nn.Sequential(*feature_extractor_layers)
 
-        self.mu_fc = nn.Sequential(
-            nn.Linear(32*32*32, 256),
-            nn.BatchNorm1d(256),
-            nn.LeakyReLU(),
-            nn.Linear(256, 256),
-            nn.BatchNorm1d(256),
-            nn.LeakyReLU(),
-            nn.Linear(256, latent_size),)
+        mu_fc_layers = [nn.Linear(48 * 32 * 32, fc_layers[0])]
+        for i in range(1, len(fc_layers)):
+            mu_fc_layers.append(nn.Linear(fc_layers[i - 1], fc_layers[i]))
+            mu_fc_layers.append(nn.LeakyReLU())
+            mu_fc_layers.append(nn.BatchNorm1d(fc_layers[i]))
+        mu_fc_layers.append(nn.Linear(fc_layers[-1], latent_size))
+        self.mu_fc = nn.Sequential(*mu_fc_layers)
 
-        self.log_sigma_fc = nn.Sequential(
-            nn.Linear(32*32*32, 256),
-            nn.BatchNorm1d(256),
-            nn.LeakyReLU(),
-            nn.Linear(256, 256),
-            nn.BatchNorm1d(256),
-            nn.LeakyReLU(),
-            nn.Linear(256, latent_size),)
+        log_sigma_fc_layers = [nn.Linear(48 * 32 * 32, fc_layers[0])]
+        for i in range(1, len(fc_layers)):
+            log_sigma_fc_layers.append(nn.Linear(fc_layers[i - 1], fc_layers[i]))
+            log_sigma_fc_layers.append(nn.LeakyReLU())
+            log_sigma_fc_layers.append(nn.BatchNorm1d(fc_layers[i]))
+        log_sigma_fc_layers.append(nn.Linear(fc_layers[-1], latent_size))
+        self.log_sigma_fc = nn.Sequential(*log_sigma_fc_layers)
 
     def forward(self, x):
         features = self.feature_extractor(x)
@@ -79,7 +77,7 @@ class VaeEncoder(nn.Module):
 
 
 class VaeDecoder(torch.nn.Module):
-    def __init__(self, latent_size=128, num_residual_convs=3, device=None):
+    def __init__(self, latent_size=128, fc_layers=(512, 512, 512), num_residual_convs=3, device=None):
         super(VaeDecoder, self).__init__()
 
         if device is None:
@@ -88,30 +86,26 @@ class VaeDecoder(torch.nn.Module):
             self.device = device
 
         self.latent_size = latent_size
-        self.feature_extractor = nn.Sequential(
-            nn.Linear(latent_size, 256),
-            nn.BatchNorm1d(256),
-            nn.LeakyReLU(),
-            nn.Linear(256, 256),
-            nn.BatchNorm1d(256),
-            nn.LeakyReLU(),
-            nn.Linear(256, 32*32*32),
-            nn.BatchNorm1d(32*32*32),
-            nn.LeakyReLU(),
-        )
+
+        feature_extractor_layers = [nn.Linear(latent_size, fc_layers[0])]
+        for i in range(1, len(fc_layers)):
+            feature_extractor_layers.append(nn.Linear(fc_layers[i - 1], fc_layers[i]))
+            feature_extractor_layers.append(nn.LeakyReLU())
+            feature_extractor_layers.append(nn.BatchNorm1d(fc_layers[i]))
+        feature_extractor_layers.append(nn.Linear(fc_layers[-1], 48 * 32 * 32))
+        self.feature_extractor = nn.Sequential(*feature_extractor_layers)
 
         decoder_layers = []
         for _ in range(num_residual_convs):
-            decoder_layers.append(ResidualConvBlock(32))
+            decoder_layers.append(ResidualConvBlock(48))
         decoder_layers += [
-            nn.Conv2d(32, 64, kernel_size=3, padding='same'),  # -> 32x32x64
+            nn.PixelShuffle(2),  # -> 12x64x64
+            nn.Conv2d(12, 12, kernel_size=3, padding='same'),
             nn.LeakyReLU(),
-            nn.BatchNorm2d(64),
+            nn.BatchNorm2d(12),
 
-            nn.PixelShuffle(2),  # -> 64x64x16
-            nn.Conv2d(16, 12, kernel_size=3, padding='same'),  # -> 64x64x12
-
-            nn.PixelShuffle(2),  # -> 128x128x3
+            nn.PixelShuffle(2),  # -> 3x128x128
+            nn.Conv2d(3, 3, kernel_size=3, padding='same'),
             nn.Sigmoid(),
         ]
 
@@ -119,14 +113,14 @@ class VaeDecoder(torch.nn.Module):
 
     def forward(self, z):
         features = self.feature_extractor(z)
-        features = features.view(features.size(0), 32, 32, 32)
+        features = features.view(features.size(0), 48, 32, 32)
         x_reconstructed = self.decoder(features)
 
         return x_reconstructed
 
 
 class Vae(torch.nn.Module):
-    def __init__(self, latent_size=128, num_residual_convs=3, device=None):
+    def __init__(self, latent_size=128, fc_layers=(512, 512, 512), num_residual_convs=3, device=None):
         super(Vae, self).__init__()
 
         if device is None:
@@ -136,8 +130,8 @@ class Vae(torch.nn.Module):
 
         self.latent_size = latent_size
 
-        self.encoder = VaeEncoder(latent_size, num_residual_convs=num_residual_convs, device=self.device)
-        self.decoder = VaeDecoder(latent_size, num_residual_convs=num_residual_convs, device=self.device)
+        self.encoder = VaeEncoder(latent_size, fc_layers, num_residual_convs, device=self.device)
+        self.decoder = VaeDecoder(latent_size, fc_layers, num_residual_convs, device=self.device)
 
     def forward(self, x):
         z, mu, log_sigma = self.encoder(x)
