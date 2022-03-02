@@ -8,18 +8,18 @@ from torch.utils.tensorboard import SummaryWriter
 import time
 
 
-TB_RUN_NAME = 'Fixed48Model-BS32'
+TB_RUN_NAME = 'MSE'
 # --- hyper parameters ---
-BATCH_SIZE = 32
-EPOCHS = 10000
-LEARNING_RATE = 2e-4
+BATCH_SIZE = 64
+EPOCHS = 5000
+LEARNING_RATE = 1e-4
 LR_DECAY_GAMMA = 0.2
-LATENT_SIZE = 512
-RESIDUAL_BLOCKS = 6
-FC_LAYERS = [512, 512, 512, 512]
-BETA = 1.5
+LATENT_SIZE = 128
+RESIDUAL_BLOCKS = 1
+FC_LAYERS = [256]
+BETA = 1
 
-EVAL_FREQ = 500
+EVAL_FREQ = 50
 
 
 def main():
@@ -28,7 +28,7 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("running on device:", device)
 
-    data_set = ShmootDataSet128(augment=True)
+    data_set = ShmootDataSet128(augment=False)
     data_loader = get_shmoot_dataloader(data_set, batch_size=BATCH_SIZE)
     model = Vae(latent_size=LATENT_SIZE,
                 num_residual_convs=RESIDUAL_BLOCKS,
