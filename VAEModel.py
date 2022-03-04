@@ -45,9 +45,11 @@ class VaeEncoder(nn.Module):
         for _ in range(num_residual_convs):
             feature_extractor_layers.append(ResidualConvBlock(48))
 
+        feature_extractor_layers.append(nn.Conv2d(48, 24, kernel_size=1, padding='same'))
+
         self.feature_extractor = nn.Sequential(*feature_extractor_layers)
 
-        mu_fc_layers = [nn.Linear(48 * 32 * 32, fc_layers[0])]
+        mu_fc_layers = [nn.Linear(24 * 32 * 32, fc_layers[0])]
         for i in range(1, len(fc_layers)):
             mu_fc_layers.append(nn.Linear(fc_layers[i - 1], fc_layers[i]))
             mu_fc_layers.append(nn.LeakyReLU())
@@ -92,10 +94,10 @@ class VaeDecoder(torch.nn.Module):
             feature_extractor_layers.append(nn.Linear(fc_layers[i - 1], fc_layers[i]))
             feature_extractor_layers.append(nn.LeakyReLU())
             feature_extractor_layers.append(nn.BatchNorm1d(fc_layers[i]))
-        feature_extractor_layers.append(nn.Linear(fc_layers[-1], 48 * 32 * 32))
+        feature_extractor_layers.append(nn.Linear(fc_layers[-1], 24 * 32 * 32))
         self.feature_extractor = nn.Sequential(*feature_extractor_layers)
 
-        decoder_layers = []
+        decoder_layers = [nn.Conv2d(24, 48, kernel_size=1, padding='same')]
         for _ in range(num_residual_convs):
             decoder_layers.append(ResidualConvBlock(48))
         decoder_layers += [
@@ -113,7 +115,7 @@ class VaeDecoder(torch.nn.Module):
 
     def forward(self, z):
         features = self.feature_extractor(z)
-        features = features.view(features.size(0), 48, 32, 32)
+        features = features.view(features.size(0), 24, 32, 32)
         x_reconstructed = self.decoder(features)
 
         return x_reconstructed
