@@ -8,21 +8,21 @@ from torch.utils.tensorboard import SummaryWriter
 import time
 
 
-TB_RUN_NAME = 'VGG-medium'
+TB_RUN_NAME = 'ImprovedHeavy'
 # --- hyper parameters ---
 BATCH_SIZE = 64
-EPOCHS = 7500
-LEARNING_RATE = 1e-4
-LR_DECAY_GAMMA = 0.2
-LATENT_SIZE = 256
-RESIDUAL_BLOCKS = 4
-FC_LAYERS = [512, 256]
+EPOCHS = 40000
+LEARNING_RATE = 2e-4
+LR_DECAY_GAMMA = 0.1
+LATENT_SIZE = 400
+RESIDUAL_BLOCKS = 6
+FC_LAYERS = [800, 600]
 BETA = 1.5
 VGG_WEIGHT = 0.005
 
 NUM_WORKERS = 4
-EVAL_FREQ = 200
-CHECKPOINT_FREQ = 1500
+EVAL_FREQ = 250
+CHECKPOINT_FREQ = 5000
 
 
 def main():
@@ -33,11 +33,11 @@ def main():
 
     data_set = ShmootDataSet128(augment=True)
     data_loader = get_shmoot_dataloader(data_set, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS)
-    # model = Vae(latent_size=LATENT_SIZE,
-    #             num_residual_convs=RESIDUAL_BLOCKS,
-    #             fc_layers=FC_LAYERS,
-    #             device=device).to(device)
-    model = torch.load('checkpoints/withVGG7500.pt')
+    model = Vae(latent_size=LATENT_SIZE,
+                num_residual_convs=RESIDUAL_BLOCKS,
+                fc_layers=FC_LAYERS,
+                device=device).to(device)
+    # model = torch.load('checkpoints/withVGG7500.pt')
     optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=2*EPOCHS//3, gamma=LR_DECAY_GAMMA)
     loss_fn = VAEComposedLoss(kl_beta=BETA, vgg_weight=VGG_WEIGHT, device=device)
@@ -64,7 +64,7 @@ def main():
 
         print("Epoch: {}/{}".format(epoch, EPOCHS), "Time: {:.2f}".format(time.time() - start))
         if epoch % CHECKPOINT_FREQ == 0:
-            torch.save(model, "checkpoints/withVGG{}.pt".format(epoch))
+            torch.save(model, "checkpoints/{}{}.pt".format(TB_RUN_NAME, epoch))
         if epoch % EVAL_FREQ == 0:
             writer.add_image("Images/original_subset", make_image_grid(im_batch[0:8]), epoch)
             writer.add_image("Images/reconstructed_subset", make_image_grid(recon_batch[0:8]), epoch)
