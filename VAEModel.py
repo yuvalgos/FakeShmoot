@@ -59,7 +59,7 @@ class VaeEncoder(nn.Module):
         mu_fc_layers.append(nn.Linear(fc_layers[-1], latent_size))
         self.mu_fc = nn.Sequential(*mu_fc_layers)
 
-        log_sigma_fc_layers = [nn.Linear(48 * 32 * 32, fc_layers[0])]
+        log_sigma_fc_layers = [nn.Linear(24 * 32 * 32, fc_layers[0])]
         for i in range(1, len(fc_layers)):
             log_sigma_fc_layers.append(nn.Linear(fc_layers[i - 1], fc_layers[i]))
             log_sigma_fc_layers.append(nn.LeakyReLU())
@@ -125,7 +125,7 @@ class VaeDecoder(torch.nn.Module):
         features = features.view(features.size(0), 24, 32, 32)
         x_reconstructed = self.first_1x1conv(features)
         x_reconstructed = x_reconstructed + self.residual_conv(x_reconstructed)
-        x_reconstructed = self.decoder(features)
+        x_reconstructed = self.decoder(x_reconstructed)
 
         return x_reconstructed
 
