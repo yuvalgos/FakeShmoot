@@ -8,22 +8,22 @@ from torch.utils.tensorboard import SummaryWriter
 import time
 
 
-TB_RUN_NAME = 'Medium_NoBatchnorm'
+TB_RUN_NAME = 'Heavy_NoBatchnorm-beta2'
 # --- hyper parameters ---
 BATCH_SIZE = 16
-EPOCHS = 12000
+EPOCHS = 30000
 LEARNING_RATE = 1e-4
 LR_DECAY_GAMMA = 0.1
-LATENT_SIZE = 256
-RESIDUAL_BLOCKS = 3
-FC_LAYERS = [512, 256]
-BETA = 1.5
+LATENT_SIZE = 300
+RESIDUAL_BLOCKS = 4
+FC_LAYERS = [750, 600, 450]
+BETA = 2
 VGG_WEIGHT = 0.005
-BATCHNORM = False ####################################################
+BATCHNORM = False
 
 NUM_WORKERS = 4
 EVAL_FREQ = 200
-CHECKPOINT_FREQ = 1500
+CHECKPOINT_FREQ = 2000
 
 
 def main():
