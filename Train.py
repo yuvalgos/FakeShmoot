@@ -8,21 +8,22 @@ from torch.utils.tensorboard import SummaryWriter
 import time
 
 
-TB_RUN_NAME = 'ImprovedHeavy'
+TB_RUN_NAME = 'Medium_NoBatchnorm'
 # --- hyper parameters ---
-BATCH_SIZE = 64
-EPOCHS = 40000
-LEARNING_RATE = 2e-4
+BATCH_SIZE = 16
+EPOCHS = 12000
+LEARNING_RATE = 1e-4
 LR_DECAY_GAMMA = 0.1
-LATENT_SIZE = 400
-RESIDUAL_BLOCKS = 6
-FC_LAYERS = [800, 600]
+LATENT_SIZE = 256
+RESIDUAL_BLOCKS = 3
+FC_LAYERS = [512, 256]
 BETA = 1.5
 VGG_WEIGHT = 0.005
+BATCHNORM = False ####################################################
 
 NUM_WORKERS = 4
-EVAL_FREQ = 250
-CHECKPOINT_FREQ = 5000
+EVAL_FREQ = 200
+CHECKPOINT_FREQ = 1500
 
 
 def main():
@@ -36,6 +37,7 @@ def main():
     model = Vae(latent_size=LATENT_SIZE,
                 num_residual_convs=RESIDUAL_BLOCKS,
                 fc_layers=FC_LAYERS,
+                batchnorm=BATCHNORM,
                 device=device).to(device)
     # model = torch.load('checkpoints/withVGG7500.pt')
     optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
