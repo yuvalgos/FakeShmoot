@@ -32,4 +32,4 @@ class ImagePrioritizedSampler(Sampler):
 
 def get_shmoot_dataloader(data_set: DataSets.ShmootDataSet, batch_size, prob_from_im=0.5, num_workers=0):
     sampler = ImagePrioritizedSampler(data_set.from_im_last_idx, data_set.total_len, prob_from_im)
-    return DataLoader(data_set, sampler=sampler, batch_size=batch_size, num_workers=num_workers)
+    return DataLoader(data_set, sampler=sampler, batch_size=batch_size, num_workers=num_workers, drop_last=True)

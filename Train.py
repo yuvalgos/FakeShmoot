@@ -8,22 +8,21 @@ from torch.utils.tensorboard import SummaryWriter
 import time
 
 
-TB_RUN_NAME = 'Heavy_NoBatchnorm-beta2'
+TB_RUN_NAME = 'noaug'
 # --- hyper parameters ---
-BATCH_SIZE = 16
-EPOCHS = 30000
+BATCH_SIZE = 8
+EPOCHS = 5001
 LEARNING_RATE = 1e-4
 LR_DECAY_GAMMA = 0.1
-LATENT_SIZE = 300
-RESIDUAL_BLOCKS = 4
-FC_LAYERS = [750, 600, 450]
-BETA = 2
+LATENT_SIZE = 200
+RESIDUAL_BLOCKS_PER_SIZE = 3
+FC_LAYERS = [1000, 500, 300]
+BETA = 1.5
 VGG_WEIGHT = 0.005
-BATCHNORM = False
 
 NUM_WORKERS = 4
-EVAL_FREQ = 200
-CHECKPOINT_FREQ = 2000
+EVAL_FREQ = 10
+CHECKPOINT_FREQ = 500
 
 
 def main():
@@ -32,14 +31,13 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("running on device:", device)
 
-    data_set = ShmootDataSet128(augment=True)
-    data_loader = get_shmoot_dataloader(data_set, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS)
+    data_set = ShmootDataSet128(augment=False)
+    data_loader = get_shmoot_dataloader(data_set, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS,)
     model = Vae(latent_size=LATENT_SIZE,
-                num_residual_convs=RESIDUAL_BLOCKS,
+                res_blocks_per_size=RESIDUAL_BLOCKS_PER_SIZE,
                 fc_layers=FC_LAYERS,
-                batchnorm=BATCHNORM,
                 device=device).to(device)
-    # model = torch.load('checkpoints/withVGG7500.pt')
+    # model = torch.load('checkpoints/Heavy_NoBatchnorm-tunetobeta150400.pt')
     optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=2*EPOCHS//3, gamma=LR_DECAY_GAMMA)
     loss_fn = VAEComposedLoss(kl_beta=BETA, vgg_weight=VGG_WEIGHT, device=device)
@@ -66,7 +64,7 @@ def main():
 
         print("Epoch: {}/{}".format(epoch, EPOCHS), "Time: {:.2f}".format(time.time() - start))
         if epoch % CHECKPOINT_FREQ == 0:
-            torch.save(model, "checkpoints/{}{}.pt".format(TB_RUN_NAME, epoch))
+            torch.save(model, "checkpoints/{}_{}.pt".format(TB_RUN_NAME, epoch))
         if epoch % EVAL_FREQ == 0:
             writer.add_image("Images/original_subset", make_image_grid(im_batch[0:8]), epoch)
             writer.add_image("Images/reconstructed_subset", make_image_grid(recon_batch[0:8]), epoch)
