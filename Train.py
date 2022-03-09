@@ -8,21 +8,21 @@ from torch.utils.tensorboard import SummaryWriter
 import time
 
 
-TB_RUN_NAME = 'noaug'
+TB_RUN_NAME = 'long_run_beta4_5blocks'
 # --- hyper parameters ---
 BATCH_SIZE = 8
-EPOCHS = 5001
+EPOCHS = 9000
 LEARNING_RATE = 1e-4
 LR_DECAY_GAMMA = 0.1
-LATENT_SIZE = 200
-RESIDUAL_BLOCKS_PER_SIZE = 3
-FC_LAYERS = [1000, 500, 300]
-BETA = 1.5
+LATENT_SIZE = 128
+RESIDUAL_BLOCKS_PER_SIZE = 5
+FC_LAYERS = [512, 256]
+BETA = 4
 VGG_WEIGHT = 0.005
 
 NUM_WORKERS = 4
-EVAL_FREQ = 10
-CHECKPOINT_FREQ = 500
+EVAL_FREQ = 100
+CHECKPOINT_FREQ = 1000
 
 
 def main():
@@ -31,7 +31,7 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("running on device:", device)
 
-    data_set = ShmootDataSet128(augment=False)
+    data_set = ShmootDataSet128(augment=True)
     data_loader = get_shmoot_dataloader(data_set, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS,)
     model = Vae(latent_size=LATENT_SIZE,
                 res_blocks_per_size=RESIDUAL_BLOCKS_PER_SIZE,

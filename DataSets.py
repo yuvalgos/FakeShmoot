@@ -25,8 +25,8 @@ class ShmootDataSet(Dataset):
         self.augment = augment
         if augmentation_transform is None:
             self.augmentation_transform = transforms.Compose([
-                transforms.RandomPerspective(distortion_scale=0.25, p=1),
-                transforms.RandomResizedCrop(size=self.im_size, scale=(0.7, 1.0), ratio=(1, 1)),
+                transforms.RandomPerspective(distortion_scale=0.1, p=1),
+                transforms.RandomResizedCrop(size=self.im_size, scale=(0.8, 1.0), ratio=(1, 1)),
                 transforms.RandomHorizontalFlip(p=0.5)
             ])
         else:
