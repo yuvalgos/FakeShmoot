@@ -8,7 +8,7 @@ from torch.utils.tensorboard import SummaryWriter
 import time
 
 
-TB_RUN_NAME = 'long_run_beta4_5blocks'
+TB_RUN_NAME = 'long_run_beta4_5blocks--fixed_reversedFC'
 # --- hyper parameters ---
 BATCH_SIZE = 8
 EPOCHS = 9000

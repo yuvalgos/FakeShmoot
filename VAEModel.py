@@ -2,7 +2,15 @@ import torch
 from torch import nn
 
 
+'''
+Implementation of VAE model.
+Sizes of layers outputs in the comments a.k.a  '# -> ChannelsxWxH'
+Are only correct when the input is 128x128
+'''
+
+
 def cond_batchnorm2d_layer(batch_norm, dims):
+    """ Not used anymore """
     if batch_norm:
         return nn.BatchNorm2d(dims)
     else:
@@ -10,6 +18,7 @@ def cond_batchnorm2d_layer(batch_norm, dims):
 
 
 def cond_batchnorm1d_layer(batch_norm, dims):
+    """ Not used anymore """
     if batch_norm:
         return nn.BatchNorm1d(dims)
     else:
@@ -39,7 +48,7 @@ class ResidualConvBlock(nn.Module):
 
 
 class VaeEncoder(nn.Module):
-    def __init__(self, latent_size=128, fc_layers=(128, 128, 128), res_blocks_per_size=3,
+    def __init__(self, input_size=128, latent_size=128, fc_layers=(128, 128, 128), res_blocks_per_size=3,
                  device=None):
         super(VaeEncoder, self).__init__()
 
@@ -83,7 +92,8 @@ class VaeEncoder(nn.Module):
         # feature_extractor_layers.append(nn.InstanceNorm2d(8))
         self.feature_extractor = nn.Sequential(*feature_extractor_layers)
 
-        shared_fc_layers = [nn.Linear(8 * 16 * 16, fc_layers[0])]  # shared for mu and sigma
+        fmap_size = input_size // 8
+        shared_fc_layers = [nn.Linear(8 * fmap_size * fmap_size, fc_layers[0])]  # shared for mu and sigma
         for i in range(1, len(fc_layers)):
             shared_fc_layers.append(nn.Linear(fc_layers[i - 1], fc_layers[i]))
             shared_fc_layers.append(nn.LeakyReLU())
@@ -114,7 +124,8 @@ class VaeEncoder(nn.Module):
 
 
 class VaeDecoder(torch.nn.Module):
-    def __init__(self, latent_size=128, fc_layers=(128, 128, 128), res_blocks_per_size=3, device=None):
+    def __init__(self, output_size=128, latent_size=128, fc_layers=(128, 128, 128),
+                 res_blocks_per_size=3, device=None):
         super(VaeDecoder, self).__init__()
 
         if device is None:
@@ -123,6 +134,8 @@ class VaeDecoder(torch.nn.Module):
             self.device = device
 
         self.latent_size = latent_size
+        self.output_size = output_size
+        self.first_fmap_size = output_size // 8
 
         # additional layers for the decoder to make it compatible with the encoder (shared fc layers)
         self.feature_extractor = [nn.Linear(latent_size, latent_size),
@@ -134,7 +147,7 @@ class VaeDecoder(torch.nn.Module):
             self.feature_extractor.append(nn.Linear(fc_layers[i - 1], fc_layers[i]))
             self.feature_extractor.append(nn.LeakyReLU())
             self.feature_extractor.append(nn.LayerNorm(fc_layers[i]))
-        self.feature_extractor.append(nn.Linear(fc_layers[-1], 8 * 16 * 16))
+        self.feature_extractor.append(nn.Linear(fc_layers[-1], 8 * self.first_fmap_size * self.first_fmap_size))
         self.feature_extractor = nn.Sequential(*self.feature_extractor)
 
         decoder_layers = [nn.Conv2d(8, 16, kernel_size=1, padding='same'),
@@ -171,14 +184,14 @@ class VaeDecoder(torch.nn.Module):
 
     def forward(self, z):
         features = self.feature_extractor(z)
-        features = features.view(features.size(0), 8, 16, 16)
+        features = features.view(features.size(0), 8, self.first_fmap_size, self.first_fmap_size)
         x_reconstructed = self.decoder(features)
 
         return x_reconstructed
 
 
 class Vae(torch.nn.Module):
-    def __init__(self, latent_size=128, fc_layers=(128, 128), res_blocks_per_size=3, device=None):
+    def __init__(self, input_size=128, latent_size=128, fc_layers=(256, 128), res_blocks_per_size=3, device=None):
         super(Vae, self).__init__()
 
         if device is None:
@@ -187,17 +200,24 @@ class Vae(torch.nn.Module):
             self.device = device
 
         self.latent_size = latent_size
+        self.input_size = input_size
 
         self.encoder = VaeEncoder(latent_size=latent_size,
+                                  input_size=input_size,
                                   fc_layers=fc_layers,
                                   res_blocks_per_size=res_blocks_per_size,
                                   device=self.device)
+        decoder_fc = fc_layers[::-1]
         self.decoder = VaeDecoder(latent_size=latent_size,
-                                  fc_layers=fc_layers,
+                                  output_size=input_size,
+                                  fc_layers=decoder_fc,
                                   res_blocks_per_size=res_blocks_per_size,
                                   device=self.device)
 
     def forward(self, x):
+        assert x.size(2) == self.input_size and x.size(3) == self.input_size,\
+            'Input size must be {}'.format(self.input_size)
+
         z, mu, log_sigma = self.encoder(x)
         x_reconstructed = self.decoder(z)
 
