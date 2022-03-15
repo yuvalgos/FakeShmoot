@@ -8,22 +8,22 @@ from torch.utils.tensorboard import SummaryWriter
 import time
 
 
-TB_RUN_NAME = '256_hLR_stylelayers'
+TB_RUN_NAME = 'T256_hLR_stylelayers'
 # --- hyper parameters ---
 BATCH_SIZE = 8
-EPOCHS = 6000
-LEARNING_RATE = 2e-4
+EPOCHS = 7500
+LEARNING_RATE = 4e-4
 LR_DECAY_GAMMA = 0.05
-LATENT_SIZE = 200
+LATENT_SIZE = 128
 RESIDUAL_BLOCKS_PER_SIZE = 5
-FC_LAYERS = [600, 400]
+FC_LAYERS = [512, 256]
 BETA = 4
 VGG_WEIGHT = 0.000005
 VGG_LAYERS = [0, 1, 2, 3, 4]
-VGG_STYLE_LAYERS = [0, 1, 2, 3, 4]
+VGG_STYLE_LAYERS = [1, 3]
 
 NUM_WORKERS = 4
-EVAL_FREQ = 25
+EVAL_FREQ = 50
 CHECKPOINT_FREQ = 500
 
 
@@ -46,7 +46,7 @@ def main():
     loss_fn = VAEComposedLoss(kl_beta=BETA, vgg_weight=VGG_WEIGHT, VGG_feature_layers=VGG_LAYERS,
                               VGG_style_layers=VGG_STYLE_LAYERS, device=device)
 
-    writer = SummaryWriter(log_dir='runs256', comment=TB_RUN_NAME)
+    writer = SummaryWriter(log_dir='runs256', filename_suffix=TB_RUN_NAME, comment=TB_RUN_NAME)
 
     for epoch in range(EPOCHS+1):
         start = time.time()
