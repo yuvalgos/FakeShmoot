@@ -17,7 +17,7 @@ Generally, a very deep model with residual blocks was used. In order to reduce t
 which lay mostly in the fully connected layers, 1x1 convolution was used to reduce the number of channels.
 
 ## Final architecture for 256x256 images:
-###Encoder
+### Encoder
 
 | input: 3x256x256 image batch                                            | output     |
 |-------------------------------------------------------------------------|------------|
@@ -41,7 +41,8 @@ which lay mostly in the fully connected layers, 1x1 convolution was used to redu
 | Layer Norm                                                              | 256        |
 |                                                                         |            |
 | Two identical FC layers followed by Leaky Relu (for $\mu$ and $\sigma$) | 256x2      | 
-| Two Identical FC layers to produce 128 vectors for $\mu$ and $\sigma$)  | 128x2      |
+| Two Identical FC layers to produce $\mu$ and $\sigma$ for latent space  | 128x2      |
+
 *Residual blocks are composed of the following layers where the output is the result added to the input:
 * 3x3 convolution
 * Leaky RELU
