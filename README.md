@@ -19,34 +19,38 @@ which lay mostly in the fully connected layers, 1x1 convolution was used to redu
 ## Final architecture for 256x256 images:
 ### Encoder
 
-| input: 3x256x256 image batch                                            | output     |
-|-------------------------------------------------------------------------|------------|
-| 1x1 convolution to create feature maps followed by Leaky RELU           | 8x256x256  |
-| 5 Residual Blocks* of 3x3 convolution                                   | 8x256x256  |
-| Subpixel (nn.PixelUnshuffle) with factor of 2                           | 32x128x128 |
-| 1x1 convolution                                                         | 16x128x128 |
-| 5 Residual Blocks* of 3x3 convolution                                   | 16x128x128 |
-| Subpixel (nn.PixelUnshuffle) with factor of 2                           | 64x64x64   |
-| 1x1 convolution                                                         | 32x64x64   |
-| 5 Residual Blocks* of 3x3 convolution                                   | 32x64x64   |
-| Subpixel (nn.PixelUnshuffle) with factor of 2                           | 128x32x32  |
-| 1x1 convolution                                                         | 64x32x32   |
-| 5 Residual Blocks* of 3x3 convolution                                   | 64x32x32   |
-| 1x1 convolution + Leaky RELU                                            | 32x32x32   |
-| 1x1 convolution + Leaky RELU                                            | 16x32x32   |
-| 1x1 convolution + Leaky RELU                                            | 8x32x32    |
-| FC layer with output of 512 units and Leaky RELU                        | 512        |
-| Layer Norm                                                              | 512        |
-| FC layer with output of 256 units and Leaky RELU                        | 256        |
-| Layer Norm                                                              | 256        |
-|                                                                         |            |
-| Two identical FC layers followed by Leaky Relu (for $\mu$ and $\sigma$) | 256x2      | 
-| Two Identical FC layers to produce $\mu$ and $\sigma$ for latent space  | 128x2      |
+| input: 3x256x256 image batch                                                  | output     |
+|-------------------------------------------------------------------------------|------------|
+| 1x1 convolution to create feature maps followed by Leaky RELU                 | 8x256x256  |
+| 5 Residual Blocks* of 3x3 convolution                                         | 8x256x256  |
+| Subpixel (nn.PixelUnshuffle) with factor of 2                                 | 32x128x128 |
+| 1x1 convolution                                                               | 16x128x128 |
+| 5 Residual Blocks* of 3x3 convolution                                         | 16x128x128 |
+| Subpixel (nn.PixelUnshuffle) with factor of 2                                 | 64x64x64   |
+| 1x1 convolution                                                               | 32x64x64   |
+| 5 Residual Blocks* of 3x3 convolution                                         | 32x64x64   |
+| Subpixel (nn.PixelUnshuffle) with factor of 2                                 | 128x32x32  |
+| 1x1 convolution                                                               | 64x32x32   |
+| 5 Residual Blocks* of 3x3 convolution                                         | 64x32x32   |
+| 1x1 convolution + Leaky RELU                                                  | 32x32x32   |
+| 1x1 convolution + Leaky RELU                                                  | 16x32x32   |
+| 1x1 convolution + Leaky RELU                                                  | 8x32x32    |
+| FC layer with output of 512 units and Leaky RELU                              | 512        |
+| Layer Norm                                                                    | 512        |
+| FC layer with output of 256 units and Leaky RELU                              | 256        |
+| Layer Norm                                                                    | 256        |
+|                                                                               |            |
+| Two identical FC layers followed by Leaky Relu (for mu and sigma)             | 256x2      | 
+| Two Identical FC layers to produce mu and sigma for latent space  of size 128 | 128x2      |
 
 *Residual blocks are composed of the following layers where the output is the result added to the input:
 * 3x3 convolution
 * Leaky RELU
 * 3x3 convolution
+
+### Decoder
+The decoder is a mirror image of the encoder - Subpixel (nn.PixelUnshuffle) are replaced with desubpixel
+ (nn.Pixelshuffle) and the rest remains the same. 
 
 
 # Visualization
@@ -59,7 +63,7 @@ More visualizations can be seen in [SampleAndVisualize.ipynb](SampleAndVisualize
 ## Samples
 ![Samples](assets/Samples.png)
 
-### Sampling from $P(Z|X)$
+### Sampling from P(Z|X)
 This is done by calculating the mean s.t.d and mean of the entire dataset and sampling from this parameters. 
 Actualy a small trick had to be applied to get good images due to some anomalies in the s.t.d vector,
 look at [SampleAndVisualize.ipynb](SampleAndVisualize.ipynb).
@@ -100,3 +104,11 @@ also warped and have some black pixel near the edges
 * horizontal flip with probability of 0.5
 
 # Reproducing
+* Clone the repository, it contains the processed data set
+* run 
+    ```
+    pip install requirements.txt
+    ```
+    You might need to install the appropriate version of pytorch manually.
+
+* run Train256.py, which contains the hyper-parameters as well.
